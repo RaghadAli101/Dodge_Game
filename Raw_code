@@ -1,0 +1,152 @@
+import pygame
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Set up the game window
+screen_width = 800
+screen_height = 600
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Dodge Game")
+
+# Load game assets
+player_image = pygame.image.load("92.png").convert_alpha()
+enemy_image = pygame.image.load("91.png").convert_alpha()
+
+# Define game objects
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = player_image
+        self.rect = self.image.get_rect()
+        self.rect.center = (screen_width // 2, screen_height - 50)
+        self.speed = 5
+
+    def update(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] and self.rect.left > 0:
+            self.rect.x -= self.speed
+        if keys[pygame.K_RIGHT] and self.rect.right < screen_width:
+            self.rect.x += self.speed
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = enemy_image
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randint(0, screen_width - self.rect.width)
+        self.rect.y = random.randint(-100, -40)
+        self.speed = random.randint(1, 5)
+
+    def update(self):
+        self.rect.y += self.speed
+        if self.rect.top > screen_height:
+            self.rect.x = random.randint(0, screen_width - self.rect.width)
+            self.rect.y = random.randint(-100, -40)
+            self.speed = random.randint(1, 5)
+
+# Create sprite groups
+all_sprites = pygame.sprite.Group()
+enemies = pygame.sprite.Group()
+player = Player()
+all_sprites.add(player)
+
+for i in range(10):
+    enemy = Enemy()
+    all_sprites.add(enemy)
+    enemies.add(enemy)
+
+# Set up game variables
+score = 0
+font = pygame.font.Font(None, 36)
+
+# Set up game variables
+score = 0
+font = pygame.font.Font(None, 36)
+game_over = False
+
+# Function to restart the game
+def restart_game():
+    all_sprites.empty()
+    enemies.empty()
+    player = Player()
+    all_sprites.add(player)
+    for i in range(10):
+        enemy = Enemy()
+        all_sprites.add(enemy)
+        enemies.add(enemy)
+    return False
+
+# Start game loop
+running = True
+while running:
+    # Handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+            game_over = restart_game()
+
+    if not game_over:
+        # Update game objects
+        all_sprites.update()
+
+        # Check for collisions
+        hits = pygame.sprite.spritecollide(player, enemies, False)
+        if hits:
+            game_over = True
+
+        # Draw game objects
+        screen.fill((255, 255, 255))
+        all_sprites.draw(screen)
+        pygame.display.flip()
+
+        # Draw restart button if game over
+        if game_over:
+            restart_text = font.render("Press 'R' to restart", True, (0, 0, 0))
+            screen.blit(restart_text, (screen_width // 2 - restart_text.get_width() // 2, screen_height // 2 + restart_text.get_height() // 2))
+            pygame.display.flip()
+    else:
+        # Game over screen
+        screen.fill((255, 255, 255))
+        game_over_text = font.render("Game Over", True, (0, 0, 0))
+        restart_text = font.render("Press 'R' to restart", True, (0, 0, 0))
+        screen.blit(game_over_text, (screen_width // 2 - game_over_text.get_width() // 2, screen_height // 2 - game_over_text.get_height() // 2))
+        screen.blit(restart_text, (screen_width // 2 - restart_text.get_width() // 2, screen_height // 2 + restart_text.get_height() // 2))
+        pygame.display.flip()
+
+
+# Start game loop
+running = True
+while running:
+    # Handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Update game objects
+    all_sprites.update()
+
+    # Check for collisions
+    hits = pygame.sprite.spritecollide(player, enemies, False)
+    if hits:
+        running = False
+
+    # Update score and reset enemies
+    for enemy in enemies:
+        if enemy.rect.top > screen_height:
+            score += 1
+            enemy.rect.x = random.randint(0, screen_width - enemy.rect.width)
+            enemy.rect.y = random.randint(-100, -40)
+            enemy.speed = random.randint(0.11, 0.001)
+
+    # Draw game objects to screen
+    screen.fill((255, 255, 255))
+    all_sprites.draw(screen)
+    score_text = font.render("Score: {}".format(score), True, (0, 0, 0))
+    screen.blit(score_text, (10, 10))
+    pygame.display.flip()
+
+# Clean up and quit Pygame
+pygame.quit()
